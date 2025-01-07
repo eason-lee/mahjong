@@ -1,0 +1,13 @@
+.cursorrules
+
+# OS
+.DS_Store
+*/.DS_Store
+
+# IDEA
+.idea
+.vscode
+
+# node_modules
+node_modules
+dist
