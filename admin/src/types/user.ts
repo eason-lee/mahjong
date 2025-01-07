@@ -10,4 +10,14 @@ export interface AdminUser {
   merchant_id?: number
   created_at?: string
   updated_at?: string
+}
+
+export interface UserState {
+  token: string
+  userInfo: {
+    id: string
+    username: string
+    avatar: string | null
+    role: number
+  }
 } 

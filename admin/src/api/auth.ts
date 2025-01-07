@@ -1,4 +1,4 @@
-import request from '../utils/request'
+import { supabase } from '../utils/supabase'
 import type { AdminUser } from '../types/user'
 
 interface LoginParams {
@@ -11,26 +11,65 @@ interface LoginResult {
   user: AdminUser
 }
 
-export function login(data: LoginParams) {
-  return request<LoginResult>({
-    url: '/admin_users',
-    method: 'post',
-    data: {
-      ...data,
-      last_login_at: new Date().toISOString()
-    }
+export async function login({ username, password }: LoginParams): Promise<LoginResult> {
+  const { data: { session }, error } = await supabase.auth.signInWithPassword({
+    email: username,
+    password
   })
-}
 
-export function register(data: LoginParams) {
-  return request<LoginResult>({
-    url: '/admin_users',
-    method: 'post',
-    data: {
-      ...data,
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  if (!session) {
+    throw new Error('登录失败')
+  }
+
+  const user = session.user
+
+  return {
+    token: session.access_token,
+    user: {
+      id: user.id,
+      username: user.email || '',
       role: 1,
       status: 1,
-      last_login_at: new Date().toISOString()
+      last_login_at: user.last_sign_in_at || undefined
+    }
+  }
+}
+
+export async function register({ username, password }: LoginParams): Promise<LoginResult> {
+  const { data: { session }, error } = await supabase.auth.signUp({
+    email: username,
+    password,
+    options: {
+      data: {
+        username,
+        role: 1,
+        status: 1
+      }
     }
   })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  if (!session) {
+    throw new Error('注册失败')
+  }
+
+  const user = session.user
+
+  return {
+    token: session.access_token,
+    user: {
+      id: user.id,
+      username: user.email || '',
+      role: 1,
+      status: 1,
+      last_login_at: user.last_sign_in_at || undefined
+    }
+  }
 } 

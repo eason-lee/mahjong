@@ -21,8 +21,8 @@ const formData = reactive({
 
 const rules = reactive<FormRules>({
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度应为3-20个字符', trigger: 'blur' }
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -46,11 +46,15 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
     
-    const apiMethod = isLogin.value ? login : register
-    const { token, user } = await apiMethod(formData)
+    const { token, user } = await (isLogin.value ? login(formData) : register(formData))
     
     userStore.setToken(token)
-    userStore.setUserInfo(user)
+    userStore.setUserInfo({
+      id: user.id,
+      username: user.username,
+      avatar: null,
+      role: user.role
+    })
     
     ElMessage.success(isLogin.value ? '登录成功' : '注册成功')
     router.push('/')
@@ -76,7 +80,7 @@ const handleSubmit = async () => {
           <el-input
             v-model="formData.username"
             :prefix-icon="User"
-            placeholder="用户名"
+            placeholder="邮箱"
             size="large"
           />
         </el-form-item>

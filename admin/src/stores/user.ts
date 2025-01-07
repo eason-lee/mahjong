@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { UserState } from '../types/user'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
   const userInfo = ref({
     id: '',
     username: '',
-    avatar: '',
-    role: ''
+    avatar: null as string | null,
+    role: 0
   })
 
   // 设置token
@@ -23,7 +24,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // 设置用户信息
-  function setUserInfo(info: typeof userInfo.value) {
+  function setUserInfo(info: UserState['userInfo']) {
     userInfo.value = info
   }
 
@@ -32,8 +33,8 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = {
       id: '',
       username: '',
-      avatar: '',
-      role: ''
+      avatar: null,
+      role: 0
     }
   }
 
