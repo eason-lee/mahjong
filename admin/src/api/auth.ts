@@ -1,19 +1,25 @@
-import { supabase } from '../utils/supabase'
-import type { AdminUser } from '../types/user'
+import { createClient } from '@supabase/supabase-js'
 
-interface LoginParams {
-  username: string
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_KEY
+)
+
+export interface LoginParams {
+  email: string
   password: string
 }
 
-interface LoginResult {
-  token: string
-  user: AdminUser
+export interface RegisterParams {
+  email: string
+  password: string
+  name?: string
 }
 
-export async function login({ username, password }: LoginParams): Promise<LoginResult> {
-  const { data: { session }, error } = await supabase.auth.signInWithPassword({
-    email: username,
+// 登录
+export async function login({ email, password }: LoginParams) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
     password
   })
 
@@ -21,33 +27,21 @@ export async function login({ username, password }: LoginParams): Promise<LoginR
     throw new Error(error.message)
   }
 
-  if (!session) {
-    throw new Error('登录失败')
-  }
-
-  const user = session.user
-
   return {
-    token: session.access_token,
-    user: {
-      id: user.id,
-      username: user.email || '',
-      role: 1,
-      status: 1,
-      last_login_at: user.last_sign_in_at || undefined
-    }
+    token: data.session?.access_token,
+    user: data.user
   }
 }
 
-export async function register({ username, password }: LoginParams): Promise<LoginResult> {
-  const { data: { session }, error } = await supabase.auth.signUp({
-    email: username,
+// 注册
+export async function register({ email, password, name }: RegisterParams) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
     password,
     options: {
       data: {
-        username,
-        role: 1,
-        status: 1
+        name,
+        role: 'admin' // 这里设置用户角色为 admin
       }
     }
   })
@@ -56,20 +50,28 @@ export async function register({ username, password }: LoginParams): Promise<Log
     throw new Error(error.message)
   }
 
-  if (!session) {
-    throw new Error('注册失败')
-  }
-
-  const user = session.user
-
   return {
-    token: session.access_token,
-    user: {
-      id: user.id,
-      username: user.email || '',
-      role: 1,
-      status: 1,
-      last_login_at: user.last_sign_in_at || undefined
-    }
+    token: data.session?.access_token,
+    user: data.user
   }
+}
+
+// 登出
+export async function logout() {
+  const { error } = await supabase.auth.signOut()
+  
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
+// 获取当前用户
+export async function getCurrentUser() {
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  if (error) {
+    throw new Error(error.message)
+  }
+  
+  return user
 } 
