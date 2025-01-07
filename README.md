@@ -16,6 +16,12 @@
 - 在线支付（微信支付）
 - 智能开门系统
 
+### 后端服务
+- 使用supabase作为数据库和实时数据同步
+- 使用supabase的auth作为用户认证
+- 使用supabase的storage作为文件存储
+- 使用supabase的functions作为后端服务
+
 
 ### 用户端（小程序）
 - 框架：uniapp

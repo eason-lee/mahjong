@@ -2,6 +2,12 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/Login.vue'),
+    meta: { title: '登录' }
+  },
+  {
     path: '/',
     name: 'Layout',
     component: () => import('../layouts/DefaultLayout.vue'),
@@ -31,12 +37,6 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '数据统计' }
       }
     ]
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('../views/Login.vue'),
-    meta: { title: '登录' }
   }
 ]
 
@@ -54,6 +54,9 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
   if (to.path !== '/login' && !token) {
     next('/login')
+  } else if (to.path === '/login' && token) {
+    // 如果已登录且访问登录页，重定向到首页
+    next('/')
   } else {
     next()
   }

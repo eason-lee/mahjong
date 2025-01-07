@@ -12,6 +12,12 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body {
+  font-size: 14px;
+  color: #333;
+  background-color: #f3f4f6;
+}
+
 // Scrollbar
 ::-webkit-scrollbar {
   width: 6px;
@@ -40,6 +46,27 @@ html, body {
 .el-header {
   --el-header-padding: 0 20px;
   --el-header-height: 60px;
+}
+
+.el-input__wrapper {
+  background-color: #f9fafb !important;
+}
+
+.el-input__inner {
+  height: 42px !important;
+}
+
+.el-button {
+  font-weight: 500 !important;
+}
+
+.el-button--primary {
+  --el-button-bg-color: #1890ff;
+  --el-button-border-color: #1890ff;
+  --el-button-hover-bg-color: #40a9ff;
+  --el-button-hover-border-color: #40a9ff;
+  --el-button-active-bg-color: #096dd9;
+  --el-button-active-border-color: #096dd9;
 }
 
 // Common
