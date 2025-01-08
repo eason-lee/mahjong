@@ -40,7 +40,7 @@
         <el-select v-model="formData.status" placeholder="请选择房间状态">
           <el-option label="可用" :value="RoomStatus.Available" />
           <el-option label="维护中" :value="RoomStatus.Maintenance" />
-          <el-option label="已预订" :value="RoomStatus.Reserved" />
+          <el-option label="已预订" :value="RoomStatus.Occupied" />
         </el-select>
       </el-form-item>
 
@@ -97,8 +97,8 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { getRoom, updateRoom } from '@/api/room'
-import type { UpdateRoomParams, Room } from '@/types/room'
+import { updateRoom } from '@/api/room'
+import type { UpdateRoomParams } from '@/types/room'
 import { RoomStatus } from '@/types/room'
 import type { UploadFile } from 'element-plus'
 import { useRouter, useRoute } from 'vue-router'
@@ -175,7 +175,9 @@ const handleCustomUpload = async (options: any) => {
   fileList.value.push({
     name: file.name,
     url,
-    raw: file.raw
+    raw: file.raw,
+    status: 'ready',
+    uid: 0
   })
 }
 

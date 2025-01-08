@@ -38,8 +38,8 @@ export const updateRoom = (params: UpdateRoomParams) => {
 }
 
 // 删除房间
-export const deleteRoom = (id: number) => {
-  return request.delete(`/rooms/${id}`)
+export const deleteRoom = async (id: number) => {
+  return await request.delete(`/rooms?id=eq.${id}`)
 }
 
 // 更新房间状态

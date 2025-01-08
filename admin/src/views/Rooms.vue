@@ -31,6 +31,7 @@ const handleDelete = async (id: number) => {
       type: 'warning'
     })
     
+    // 删除房间
     await deleteRoom(id)
     ElMessage.success('删除成功')
     fetchRooms()
