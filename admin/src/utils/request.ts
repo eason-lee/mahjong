@@ -21,12 +21,6 @@ request.interceptors.request.use(
       // 使用用户的 token 进行认证
       config.headers.Authorization = `Bearer ${userStore.token}`
       config.headers.apikey = import.meta.env.VITE_SUPABASE_KEY
-
-      // 添加调试信息
-      console.log('Request headers:', config.headers)
-      console.log('Request URL:', config.url)
-      console.log('Request method:', config.method)
-      console.log('Request data:', config.data)
     } else {
       // 未登录时重定向到登录页
       router.push('/login')

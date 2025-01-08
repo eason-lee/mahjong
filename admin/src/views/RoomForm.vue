@@ -78,7 +78,6 @@
             list-type="picture-card"
             :limit="5"
             accept="image/*"
-            :auto-upload="false"
           >
             <template #default>
               <el-icon><Plus /></el-icon>
@@ -214,6 +213,7 @@ import { createRoom, getRoomDetail, updateRoom, getRoomPackages, createRoomPacka
 import type { CreateRoomParams, UpdateRoomParams, Room, RoomPackage } from '@/types/room'
 import { RoomStatus } from '@/types/room'
 import type { UploadFile } from 'element-plus'
+import { deleteImage, uploadImage, uploadImages } from '@/utils/upload'
 
 const route = useRoute()
 const router = useRouter()
@@ -315,40 +315,58 @@ const fetchRoomDetail = async (id: number) => {
   }
 }
 
-// 处理图片数据
-const handleImages = () => {
-  const images: (File | string)[] = []
-  fileList.value.forEach(file => {
-    if (file.isNew && file.raw instanceof File) {
-      // 新上传的图片，使用文件对象
-      images.push(file.raw as File)
-    } else if (!file.isNew && file.url) {
-      // 已有的图片，直接使用原始URL
-      images.push(file.url)
+// 自定义上传方法
+const handleCustomUpload = async (options: any) => {
+  try {
+    const { file } = options
+    console.log('准备上传文件:', file)
+    console.log('文件对象:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      raw: file.raw
+    })
+    
+    // 确保文件是图片类型
+    if (!file.type.startsWith('image/')) {
+      throw new Error('只能上传图片文件')
     }
-  })
-  return images
+
+    // 上传图片到 Supabase Storage
+    const imageUrl = await uploadImage(file)  // 直接传入 file 而不是 file.raw
+    console.log('上传成功，获取到 URL:', imageUrl)
+    
+    // 添加到文件列表，用于预览
+    fileList.value.push({
+      uid: Date.now(),
+      name: file.name,
+      url: imageUrl,
+      status: 'success' as const
+    })
+  } catch (error: any) {
+    console.error('上传处理失败:', error)
+    ElMessage.error(error.message || '上传图片失败')
+  }
 }
 
-// 自定义上传方法，仅用于预览
-const handleCustomUpload = async (options: any) => {
-  const { file } = options
-  const url = URL.createObjectURL(file.raw)
-  fileList.value.push({
-    uid: Date.now(),
-    name: file.name,
-    url,
-    raw: file.raw,
-    status: 'success' as const,
-    isNew: true
-  })
+// 处理图片数据 - 用于表单提交
+const handleImages = () => {
+  return fileList.value.map(file => file.url)
 }
 
 // 处理图片删除
-const handleRemove = (file: CustomUploadFile) => {
-  const index = fileList.value.indexOf(file)
-  if (index !== -1) {
-    fileList.value.splice(index, 1)
+const handleRemove = async (file: CustomUploadFile) => {
+  try {
+    // 如果有 URL，说明图片已经上传到 Supabase，需要删除
+    if (file.url) {
+      await deleteImage(file.url)
+    }
+    const index = fileList.value.indexOf(file)
+    if (index !== -1) {
+      fileList.value.splice(index, 1)
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '删除图片失败')
   }
 }
 
@@ -417,7 +435,7 @@ const handleSubmit = async () => {
   try {
     await formRef.value.validate()
     
-    // 处理图片数据
+    // 处理图片数据 - 直接使用已上传图片的 URL
     formData.value.images = handleImages()
     
     if (isEdit.value) {
