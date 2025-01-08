@@ -15,12 +15,12 @@ const loading = ref(false)
 const formRef = ref<FormInstance>()
 
 const formData = reactive({
-  username: '',
+  email: '',
   password: ''
 })
 
 const rules = reactive<FormRules>({
-  username: [
+  email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
@@ -34,7 +34,7 @@ const showPassword = ref(false)
 
 const toggleAuthMode = () => {
   isLogin.value = !isLogin.value
-  formData.username = ''
+  formData.email = ''
   formData.password = ''
   formRef.value?.clearValidate()
 }
@@ -46,14 +46,23 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
     
-    const { token, user } = await (isLogin.value ? login(formData) : register(formData))
+    const params = {
+      email: formData.email,
+      password: formData.password
+    }
+    
+    const { token, user } = await (isLogin.value ? login(params) : register(params))
+    
+    if (!token || !user || !user.id) {
+      throw new Error('登录失败，请稍后重试')
+    }
     
     userStore.setToken(token)
     userStore.setUserInfo({
       id: user.id,
-      username: user.username,
+      username: user.email || '',
       avatar: null,
-      role: user.role
+      role: 1
     })
     
     ElMessage.success(isLogin.value ? '登录成功' : '注册成功')
@@ -76,11 +85,11 @@ const handleSubmit = async () => {
         :rules="rules"
         class="login-form"
       >
-        <el-form-item prop="username">
+        <el-form-item prop="email">
           <el-input
-            v-model="formData.username"
+            v-model="formData.email"
             :prefix-icon="User"
-            placeholder="邮箱"
+            placeholder="请输入邮箱"
             size="large"
           />
         </el-form-item>
@@ -90,7 +99,7 @@ const handleSubmit = async () => {
             v-model="formData.password"
             :prefix-icon="Lock"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="密码"
+            placeholder="请输入密码"
             size="large"
           >
             <template #suffix>
