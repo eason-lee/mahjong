@@ -17,12 +17,15 @@ const fetchRoomDetail = async () => {
   try {
     loading.value = true
     const id = Number(route.params.id)
-    const roomResponse = await getRoomDetail(id)
+    const [roomResponse, packagesResponse] = await Promise.all([
+      getRoomDetail(id),
+      getRoomPackages(id)
+    ])
+
     if (roomResponse.data && roomResponse.data.length > 0) {
       room.value = roomResponse.data[0]
-      const packagesResponse = await getRoomPackages(id)
-      if (packagesResponse.data && packagesResponse.data.length > 0) {
-        packages.value = packagesResponse.data[0].packages || []
+      if (packagesResponse.data) {
+        packages.value = packagesResponse.data
       }
     } else {
       ElMessage.error('房间不存在')

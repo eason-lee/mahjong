@@ -15,7 +15,11 @@ export const getRoomDetail = (id: number) => {
 
 // 获取房间套餐列表
 export const getRoomPackages = (roomId: number) => {
-  return request.get<RoomPackage[]>(`/rooms?id=eq.${roomId}&select=packages(*)`)
+  return request.get<RoomPackage[]>(`/room_packages?room_id=eq.${roomId}`, {
+    headers: {
+      'Prefer': 'return=representation'
+    }
+  })
 }
 
 // 创建房间
@@ -41,4 +45,32 @@ export const deleteRoom = (id: number) => {
 // 更新房间状态
 export const updateRoomStatus = (id: number, status: RoomStatus) => {
   return request.patch(`/rooms/${id}/status`, { status })
+}
+
+// 创建套餐
+export const createRoomPackage = (params: RoomPackage) => {
+  return request.post<RoomPackage>('/room_packages', params, {
+    headers: {
+      'Prefer': 'return=representation'
+    }
+  })
+}
+
+// 更新套餐
+export const updateRoomPackage = (params: RoomPackage) => {
+  const { id, ...updateData } = params
+  return request.patch<RoomPackage[]>(`/room_packages?id=eq.${id}`, updateData, {
+    headers: {
+      'Prefer': 'return=representation'
+    }
+  })
+}
+
+// 删除套餐
+export const deleteRoomPackage = (id: number) => {
+  return request.delete(`/room_packages?id=eq.${id}`, {
+    headers: {
+      'Prefer': 'return=representation'
+    }
+  })
 } 
