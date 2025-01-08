@@ -25,7 +25,12 @@ export const createRoom = (params: CreateRoomParams) => {
 
 // 更新房间
 export const updateRoom = (params: UpdateRoomParams) => {
-  return request.put<Room>(`/rooms/${params.id}`, params)
+  const { id, ...updateData } = params
+  return request.patch<Room[]>(`/rooms?id=eq.${id}`, updateData, {
+    headers: {
+      'Prefer': 'return=representation'
+    }
+  })
 }
 
 // 删除房间

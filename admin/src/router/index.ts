@@ -47,6 +47,14 @@ const router = createRouter({
           meta: {
             title: '房间详情'
           }
+        },
+        {
+          path: 'rooms/:id/edit',
+          name: 'room-edit',
+          component: () => import('../views/RoomForm.vue'),
+          meta: {
+            title: '编辑房间'
+          }
         }
       ]
     }

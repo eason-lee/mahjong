@@ -84,6 +84,11 @@ const handleView = (id: number) => {
   router.push(`/rooms/${id}`)
 }
 
+// 跳转到编辑页面
+const handleEdit = (id: number) => {
+  router.push(`/rooms/${id}/edit`)
+}
+
 onMounted(() => {
   fetchRooms()
 })
@@ -160,6 +165,7 @@ onMounted(() => {
                 type="primary"
                 :icon="Edit"
                 link
+                @click="handleEdit(row.id)"
               >
                 编辑
               </el-button>

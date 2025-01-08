@@ -21,6 +21,7 @@
 - 使用supabase的auth作为用户认证
 - 使用supabase的storage作为文件存储
 - 使用supabase的functions作为后端服务
+- api 文档在 docs/api.json 
 
 
 ### 用户端（小程序）
