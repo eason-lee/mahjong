@@ -75,9 +75,13 @@
             v-model:file-list="fileList"
             :http-request="handleCustomUpload"
             :on-remove="handleRemove"
+            :before-upload="handleBeforeUpload"
+            :on-change="handleChange"
             list-type="picture-card"
             :limit="5"
             accept="image/*"
+            :auto-upload="true"
+            :multiple="false"
           >
             <template #default>
               <el-icon><Plus /></el-icon>
@@ -210,8 +214,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Delete, ZoomIn } from '@element-plus/icons-vue'
 import { createRoom, getRoomDetail, updateRoom, getRoomPackages, createRoomPackage, updateRoomPackage, deleteRoomPackage } from '@/api/room'
-import type { CreateRoomParams, UpdateRoomParams, Room, RoomPackage } from '@/types/room'
-import { RoomStatus } from '@/types/room'
+import { type CreateRoomParams, type UpdateRoomParams, type Room, type RoomPackage, RoomStatus } from '@/types/room'
 import type { UploadFile } from 'element-plus'
 import { deleteImage, uploadImage, uploadImages } from '@/utils/upload'
 
@@ -315,43 +318,70 @@ const fetchRoomDetail = async (id: number) => {
   }
 }
 
+// 上传前的处理
+const handleBeforeUpload = (file: File) => {
+  // 检查文件类型
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('只能上传图片文件')
+    return false
+  }
+  // 检查文件大小（5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过 5MB')
+    return false
+  }
+  return true
+}
+
+// 文件改变时的处理
+const handleChange = (file: UploadFile) => {
+  // 防止重复添加
+  const isDuplicate = fileList.value.some(f => f.uid === file.uid)
+  if (isDuplicate) {
+    return
+  }
+}
+
 // 自定义上传方法
 const handleCustomUpload = async (options: any) => {
   try {
     const { file } = options
-    console.log('准备上传文件:', file)
-    console.log('文件对象:', {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      raw: file.raw
-    })
     
-    // 确保文件是图片类型
-    if (!file.type.startsWith('image/')) {
-      throw new Error('只能上传图片文件')
-    }
-
     // 上传图片到 Supabase Storage
-    const imageUrl = await uploadImage(file)  // 直接传入 file 而不是 file.raw
-    console.log('上传成功，获取到 URL:', imageUrl)
+    const imageUrl = await uploadImage(file)
     
-    // 添加到文件列表，用于预览
-    fileList.value.push({
-      uid: Date.now(),
-      name: file.name,
-      url: imageUrl,
-      status: 'success' as const
-    })
+    // 只有在上传成功后，才添加到文件列表
+    if (imageUrl) {
+      // 检查是否已存在相同的文件
+      const existingIndex = fileList.value.findIndex(f => f.uid === file.uid)
+      if (existingIndex >= 0) {
+        // 更新现有文件的 URL
+        fileList.value[existingIndex].url = imageUrl
+        fileList.value[existingIndex].status = 'success'
+      } else {
+        // 添加新文件
+        fileList.value.push({
+          uid: file.uid || Date.now(),
+          name: file.name,
+          url: imageUrl,
+          status: 'success' as const
+        })
+      }
+      
+      options.onSuccess()
+    }
   } catch (error: any) {
     console.error('上传处理失败:', error)
     ElMessage.error(error.message || '上传图片失败')
+    options.onError(error)
   }
 }
 
 // 处理图片数据 - 用于表单提交
 const handleImages = () => {
-  return fileList.value.map(file => file.url)
+  return fileList.value
+    .filter(file => file.status === 'success' && !file.url?.startsWith('blob:'))
+    .map(file => file.url)
 }
 
 // 处理图片删除
@@ -436,7 +466,7 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     
     // 处理图片数据 - 直接使用已上传图片的 URL
-    formData.value.images = handleImages()
+    formData.value.images = handleImages() as string[]
     
     if (isEdit.value) {
       // 更新房间
