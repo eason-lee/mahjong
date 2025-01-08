@@ -15,7 +15,8 @@ const loading = ref(false)
 const fetchRooms = async () => {
   try {
     loading.value = true
-    rooms.value = await getRooms()
+    const response = await getRooms()
+    rooms.value = response.data
   } catch (error: any) {
     ElMessage.error(error.message || '获取房间列表失败')
   } finally {
@@ -76,6 +77,11 @@ const getStatusText = (status: RoomStatus) => {
 // 跳转到创建页面
 const handleCreate = () => {
   router.push('/rooms/create')
+}
+
+// 查看房间详情
+const handleView = (id: number) => {
+  router.push(`/rooms/${id}`)
 }
 
 onMounted(() => {
@@ -146,6 +152,7 @@ onMounted(() => {
                 type="primary"
                 :icon="View"
                 link
+                @click="handleView(row.id)"
               >
                 查看
               </el-button>

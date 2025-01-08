@@ -27,12 +27,26 @@ const router = createRouter({
         {
           path: 'rooms',
           name: 'rooms',
-          component: () => import('../views/Rooms.vue')
+          component: () => import('../views/Rooms.vue'),
+          meta: {
+            title: '房间管理'
+          }
         },
         {
           path: 'rooms/create',
-          name: 'roomCreate',
-          component: () => import('../views/RoomForm.vue')
+          name: 'room-create',
+          component: () => import('../views/RoomForm.vue'),
+          meta: {
+            title: '创建房间'
+          }
+        },
+        {
+          path: 'rooms/:id',
+          name: 'room-detail',
+          component: () => import('../views/RoomDetail.vue'),
+          meta: {
+            title: '房间详情'
+          }
         }
       ]
     }
