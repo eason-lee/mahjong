@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义样式 */
+@layer components {
+  .btn {
+    @apply bg-green-500 text-white rounded-lg px-rpx-16 py-rpx-8;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow p-rpx-16;
+  }
+  
+  .tag {
+    @apply bg-gray-100 text-gray-800 rounded-full px-rpx-8 py-rpx-4 text-sm;
+  }
+} 
