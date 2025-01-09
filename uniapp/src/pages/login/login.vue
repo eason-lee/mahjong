@@ -41,24 +41,46 @@ const error = ref('')
 const userStore = useUserStore()
 
 const handleLogin = async () => {
-  isLoading.value = true
-  error.value = ''
-  
   try {
-    // 1. 获取微信登录code
+    // 1. 先获取用户信息（必须在点击事件中直接调用）
+    const userProfileRes = await uni.getUserProfile({ 
+      desc: '用于完善用户资料'
+    })
+
+    // 2. 获取登录code
     const loginRes = await uni.login()
     if (!loginRes.code) {
       throw new Error('获取登录码失败')
     }
 
-    // 2. 获取用户信息
-    const userProfileRes = await uni.getUserProfile({ 
-      desc: '用于完善用户资料'
-    })
+    // 3. 设置加载状态
+    isLoading.value = true
+    error.value = ''
 
-    // 3. 使用 Supabase 登录
-    const { data, error: loginError } = await supabase.auth.signInWithWechat({
-      code: loginRes.code,
+    const email = `${loginRes.code}@qq.com`
+    const password = loginRes.code
+
+    // 4. 先尝试注册
+    try {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            nickname: userProfileRes.userInfo.nickName,
+            avatar_url: userProfileRes.userInfo.avatarUrl,
+            wx_code: loginRes.code
+          }
+        }
+      })
+    } catch (signUpErr) {
+      console.log('注册失败，可能用户已存在:', signUpErr)
+    }
+
+    // 5. 无论注册是否成功，都尝试登录
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password
     })
 
     if (loginError) {
@@ -69,14 +91,14 @@ const handleLogin = async () => {
       throw new Error('登录失败: 未获取到用户信息')
     }
 
-    // 4. 保存用户信息
+    // 6. 保存用户信息
     userStore.setUserInfo({
       id: data.user.id,
       nickname: userProfileRes.userInfo.nickName,
       avatar: userProfileRes.userInfo.avatarUrl
     })
 
-    // 5. 跳转到首页
+    // 7. 跳转到首页
     uni.switchTab({
       url: '/pages/index/index'
     })

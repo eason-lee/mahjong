@@ -3,7 +3,8 @@
     {
       "path": "pages/login/login",
       "style": {
-        "navigationBarTitleText": "登录"
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
       }
     },
     {
@@ -11,12 +12,6 @@
       "style": {
         "navigationBarTitleText": "首页",
         "enablePullDownRefresh": true
-      }
-    },
-    {
-      "path": "pages/room/booking",
-      "style": {
-        "navigationBarTitleText": "房间预订"
       }
     },
     {
@@ -33,23 +28,22 @@
     "backgroundColor": "#F8F8F8"
   },
   "tabBar": {
-    "custom": false,
-    "color": "#7A7E83",
+    "color": "#999999",
     "selectedColor": "#07c160",
-    "borderStyle": "black",
     "backgroundColor": "#ffffff",
+    "borderStyle": "black",
     "list": [
       {
         "pagePath": "pages/index/index",
+        "text": "首页",
         "iconPath": "static/images/tabbar/home.png",
-        "selectedIconPath": "static/images/tabbar/home-active.png",
-        "text": "首页"
+        "selectedIconPath": "static/images/tabbar/home-active.png"
       },
       {
         "pagePath": "pages/user/index",
+        "text": "我的",
         "iconPath": "static/images/tabbar/user.png",
-        "selectedIconPath": "static/images/tabbar/user-active.png",
-        "text": "我的"
+        "selectedIconPath": "static/images/tabbar/user-active.png"
       }
     ]
   }
