@@ -1,5 +1,19 @@
 <template>
   <view class="container">
+    <!-- 快捷操作 -->
+    <view class="quick-actions">
+      <view 
+        class="action-item" 
+        v-for="action in quickActions" 
+        :key="action.text"
+        @tap="handleQuickAction(action.text)"
+      >
+        <image :src="action.icon" class="action-icon" mode="aspectFit" />
+        <text class="action-text">{{ action.text }}</text>
+      </view>
+    </view>
+
+    <!-- 房间列表 -->
     <view class="room-list">
       <view 
         class="room-item" 
@@ -34,9 +48,14 @@
           
           <view class="price-section">
             <view class="price-info">
-              <text class="current-price">¥{{ room.price }}/小时</text>
-              <text class="original-price">¥{{ room.price * 3 }}</text>
-              <text class="package-info">3小时套餐</text>
+              <view class="price-row">
+                <text class="label">现价：</text>
+                <text class="current-price">¥{{ room.price }}元/小时</text>
+              </view>
+              <view class="price-row">
+                <text class="label">3小时套餐：</text>
+                <text class="package-price">¥{{ room.price * 3 - 10 }}元</text>
+              </view>
             </view>
             <button class="book-btn" @tap.stop="goToDetail(room)">预定</button>
           </view>
@@ -152,6 +171,36 @@ const previewImages = (images: string[]) => {
     current: images[0]
   })
 }
+
+// 快捷操作
+const quickActions = [
+  { icon: '/static/icons/door.svg', text: '开门' },
+  { icon: '/static/icons/renew.svg', text: '续单' },
+  { icon: '/static/icons/verify.svg', text: '验券' },
+  { icon: '/static/icons/wifi.svg', text: 'WIFI' },
+  { icon: '/static/icons/service.svg', text: '客服' }
+]
+
+// 处理快捷操作点击
+const handleQuickAction = (action: string) => {
+  switch (action) {
+    case '开门':
+      uni.showToast({ title: '开门功能开发中', icon: 'none' })
+      break
+    case '续单':
+      uni.showToast({ title: '续单功能开发中', icon: 'none' })
+      break
+    case '验券':
+      uni.showToast({ title: '验券功能开发中', icon: 'none' })
+      break
+    case 'WIFI':
+      uni.showToast({ title: 'WIFI功能开发中', icon: 'none' })
+      break
+    case '客服':
+      uni.showToast({ title: '客服功能开发中', icon: 'none' })
+      break
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -159,6 +208,32 @@ const previewImages = (images: string[]) => {
   padding: 20rpx;
   min-height: 100vh;
   background: #f8f8f8;
+}
+
+.quick-actions {
+  display: flex;
+  justify-content: space-around;
+  padding: 30rpx 20rpx;
+  background: #fff;
+  margin-bottom: 20rpx;
+  border-radius: 12rpx;
+  
+  .action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8rpx;
+    
+    .action-icon {
+      width: 48rpx;
+      height: 48rpx;
+    }
+    
+    .action-text {
+      font-size: 24rpx;
+      color: #333;
+    }
+  }
 }
 
 .room-list {
@@ -191,7 +266,7 @@ const previewImages = (images: string[]) => {
           display: inline-block;
           font-size: 24rpx;
           color: #fff;
-          background: #07c160;
+          background: #1db0de;
           padding: 4rpx 16rpx;
           border-radius: 4rpx;
         }
@@ -215,8 +290,8 @@ const previewImages = (images: string[]) => {
         
         .tag {
           font-size: 24rpx;
-          color: #666;
-          background: #f5f5f5;
+          color: #333;
+          background: #e2f4fc;
           padding: 4rpx 12rpx;
           border-radius: 4rpx;
         }
@@ -229,30 +304,37 @@ const previewImages = (images: string[]) => {
         padding-top: 16rpx;
         
         .price-info {
+          display: flex;
+          flex-direction: column;
+          gap: 8rpx;
+          
+          .price-row {
+            display: flex;
+            align-items: center;
+            
+            .label {
+              font-size: 24rpx;
+              color: #666;
+            }
+          }
+          
           .current-price {
-            font-size: 32rpx;
+            font-size: 28rpx;
+            color: #333;
+            margin-right: 8rpx;
+          }
+          
+          .package-price {
+            font-size: 28rpx;
             font-weight: bold;
-            color: #f60;
-            margin-right: 8rpx;
-          }
-          
-          .original-price {
-            font-size: 24rpx;
-            color: #999;
-            text-decoration: line-through;
-            margin-right: 8rpx;
-          }
-          
-          .package-info {
-            font-size: 24rpx;
-            color: #f60;
+            color: #ff4d4f;
           }
         }
         
         .book-btn {
           font-size: 28rpx;
           color: #fff;
-          background: #07c160;
+          background: #1db0de;
           padding: 8rpx 24rpx;
           border-radius: 999rpx;
           border: none;
