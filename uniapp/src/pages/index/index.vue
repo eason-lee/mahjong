@@ -52,9 +52,9 @@
                 <text class="label">现价：</text>
                 <text class="current-price">¥{{ room.price }}元/小时</text>
               </view>
-              <view class="price-row">
-                <text class="label">3小时套餐：</text>
-                <text class="package-price">¥{{ room.price * 3 - 10 }}元</text>
+              <view class="price-row" v-if="room.package">
+                <text class="label">{{ room.package.hours }}小时套餐：</text>
+                <text class="package-price">¥{{ room.package.price }}元</text>
               </view>
             </view>
             <button class="book-btn" @tap.stop="goToDetail(room)">预定</button>
@@ -88,6 +88,20 @@ interface Room {
   tags: string[]
   created_at: string
   updated_at: string
+  package?: {
+    price: number
+    hours: number
+  }
+}
+
+interface Package {
+  id: number
+  room_id: number
+  name: string
+  hours: number
+  price: number
+  created_at: string
+  updated_at: string
 }
 
 const rooms = ref<Room[]>([])
@@ -96,19 +110,41 @@ const loading = ref(false)
 const fetchRooms = async () => {
   loading.value = true
   try {
-    const { data, error } = await supabase
+    // 获取房间列表
+    const { data: roomsData, error: roomsError } = await supabase
       .from('rooms')
       .select('*')
-      .eq('status', 1) // 只获取状态为可用的房间
+      .eq('status', 1)
       .order('created_at', { ascending: false })
 
-    if (error) throw error
+    if (roomsError) throw roomsError
 
-    rooms.value = data || []
+    if (roomsData) {
+      // 获取所有房间的套餐信息
+      const roomIds = roomsData.map(room => room.id)
+      const { data: packagesData, error: packagesError } = await supabase
+        .from('room_packages')
+        .select('*')
+        .in('room_id', roomIds)
+
+      if (packagesError) throw packagesError
+
+      // 将套餐信息添加到对应的房间中
+      rooms.value = roomsData.map(room => {
+        const roomPackage = packagesData.find(pkg => pkg.room_id === room.id)
+        return {
+          ...room,
+          package: roomPackage ? {
+            price: roomPackage.price,
+            hours: roomPackage.hours
+          } : undefined
+        }
+      })
+    }
   } catch (err) {
-    console.error('获取房间列表失败:', err)
+    console.error('获取房间信息失败:', err)
     uni.showToast({
-      title: '获取房间列表失败',
+      title: '获取房间信息失败',
       icon: 'none'
     })
   } finally {
@@ -118,7 +154,6 @@ const fetchRooms = async () => {
 
 const goToDetail = (room: Room) => {
   try {
-    // 存储房间信息
     uni.setStorageSync('BOOKING_ROOM_INFO', {
       id: room.id,
       name: room.name,
@@ -126,10 +161,10 @@ const goToDetail = (room: Room) => {
       image: room.images[0],
       area: room.area,
       tags: room.tags,
-      description: room.description
+      description: room.description,
+      package: room.package
     })
     
-    // 跳转到预订页面
     uni.navigateTo({
       url: '/pages/room/booking',
       fail: (err) => {
