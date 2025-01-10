@@ -5,7 +5,7 @@
         class="room-item" 
         v-for="room in rooms" 
         :key="room.id"
-        @tap="goToDetail(room.id)"
+        @tap="goToDetail(room)"
       >
         <!-- 左侧图片 -->
         <image 
@@ -38,7 +38,7 @@
               <text class="original-price">¥{{ room.price * 3 }}</text>
               <text class="package-info">3小时套餐</text>
             </view>
-            <button class="book-btn" @tap.stop="goToDetail(room.id)">预定</button>
+            <button class="book-btn" @tap.stop="goToDetail(room)">预定</button>
           </view>
         </view>
       </view>
@@ -97,10 +97,37 @@ const fetchRooms = async () => {
   }
 }
 
-const goToDetail = (id: number) => {
-  uni.navigateTo({
-    url: `/pages/room/detail?id=${id}`
-  })
+const goToDetail = (room: Room) => {
+  try {
+    // 存储房间信息
+    uni.setStorageSync('BOOKING_ROOM_INFO', {
+      id: room.id,
+      name: room.name,
+      price: room.price,
+      image: room.images[0],
+      area: room.area,
+      tags: room.tags,
+      description: room.description
+    })
+    
+    // 跳转到预订页面
+    uni.navigateTo({
+      url: '/pages/room/booking',
+      fail: (err) => {
+        console.error('跳转失败:', err)
+        uni.showToast({
+          title: '页面跳转失败',
+          icon: 'none'
+        })
+      }
+    })
+  } catch (err) {
+    console.error('存储房间信息失败:', err)
+    uni.showToast({
+      title: '系统错误',
+      icon: 'none'
+    })
+  }
 }
 
 onMounted(() => {

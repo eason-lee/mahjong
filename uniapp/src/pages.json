@@ -19,6 +19,15 @@
       "style": {
         "navigationBarTitleText": "我的"
       }
+    },
+    {
+      "path": "pages/room/booking",
+      "style": {
+        "navigationBarTitleText": "预约",
+        "navigationBarBackgroundColor": "#1db0de",
+        "navigationBarTextStyle": "white",
+        "backgroundColor": "#f7f7f7"
+      }
     }
   ],
   "globalStyle": {

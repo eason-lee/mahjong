@@ -1,268 +1,363 @@
 <template>
   <view class="booking-container">
-    <view class="header">
-      <view class="back-icon" @tap="goBack">返回</view>
-      <text class="title">预约</text>
-      <view class="more-icon">更多</view>
-    </view>
-
-    <view class="room-info">
-      <image 
-        class="room-image" 
-        :src="room.images[0]" 
-        mode="aspectFill"
-      />
-      <view class="room-detail">
-        <text class="store-name">门店: {{ room.storeName }}</text>
-        <text class="room-name">包间: {{ room.name }}</text>
-        <text class="special-tag">特惠包</text>
+    <!-- 房间信息 -->
+    <view class="room-info" v-if="roomInfo">
+      <view class="basic-info">
+        <image class="room-image" :src="roomInfo.image" mode="aspectFill" />
+        <view class="info-content">
+          <view class="name-wrap">
+            <text class="name">门店: {{ roomInfo.name }}</text>
+            <text class="special-tag">特惠包</text>
+          </view>
+          <text class="room-desc">包间: {{ roomInfo.area }}</text>
+        </view>
+      </view>
+      <view class="tags">
+        <text v-for="(tag, index) in roomInfo.tags" :key="index" class="tag">{{ tag }}</text>
       </view>
     </view>
 
-    <view class="room-tags">
-      <text 
-        v-for="tag in room.tags" 
-        :key="tag"
-        class="tag"
-      >{{ tag }}</text>
-    </view>
-
-    <view class="booking-mode">
-      <button 
+    <!-- 模式切换 -->
+    <view class="mode-switch">
+      <view 
         class="mode-btn"
         :class="{ active: mode === 'hourly' }"
         @tap="setMode('hourly')"
-      >小时模式</button>
-      <button 
+      >小时模式</view>
+      <view 
         class="mode-btn"
         :class="{ active: mode === 'package' }"
         @tap="setMode('package')"
-      >套餐模式</button>
+      >套餐模式</view>
     </view>
 
-    <view class="date-picker">
+    <!-- 日期选择 -->
+    <view class="date-select">
       <view 
-        v-for="date in dates" 
+        v-for="date in availableDates" 
         :key="date.value"
         class="date-item"
         :class="{ active: selectedDate === date.value }"
         @tap="selectDate(date.value)"
       >
-        <text>{{ date.label }}</text>
-        <text>{{ date.weekday }}</text>
+        <text class="date">{{ date.date }}</text>
+        <text class="day">{{ date.day }}</text>
       </view>
     </view>
 
-    <view class="package-list" v-if="mode === 'package'">
-      <view 
-        v-for="pkg in packages" 
-        :key="pkg.id"
-        class="package-item"
-        :class="{ active: selectedPackage === pkg.id }"
-        @tap="selectPackage(pkg.id)"
-      >
-        <text class="package-name">{{ pkg.name }}</text>
-        <text class="package-price">¥{{ pkg.price }}</text>
-      </view>
-    </view>
-
-    <view class="time-picker">
+    <!-- 时间选择 -->
+    <view class="time-select">
       <text class="label">时间选择:</text>
       <view class="time-range">
-        <input 
-          type="time" 
-          class="time-input"
-          v-model="startTime"
-        />
-        <text>到</text>
-        <input 
-          type="time" 
-          class="time-input"
-          v-model="endTime"
-        />
+        <picker 
+          mode="time" 
+          :value="startTime" 
+          @change="onStartTimeChange"
+          class="time-picker"
+        >
+          <view class="picker-value">{{ startTime || '请选择' }}</view>
+        </picker>
+        <text class="separator">到</text>
+        <picker 
+          mode="time" 
+          :value="endTime" 
+          @change="onEndTimeChange"
+          class="time-picker"
+        >
+          <view class="picker-value">{{ endTime || '请选择' }}</view>
+        </picker>
       </view>
     </view>
 
-    <view class="order-summary">
-      <view class="summary-item">
-        <text>预定时间:</text>
-        <text>{{ bookingTime }}</text>
+    <!-- 订单信息 -->
+    <view class="order-info">
+      <view class="info-item">
+        <text class="label">预定时间:</text>
+        <text class="value">{{ formatBookingTime }}</text>
       </view>
-      <view class="summary-item">
-        <text>预约时长:</text>
-        <text>{{ duration }}</text>
+      <view class="info-item">
+        <text class="label">预约时长:</text>
+        <text class="value">{{ duration }}小时</text>
       </view>
-      <view class="summary-item">
-        <text>订单总价:</text>
-        <text>¥{{ totalPrice }}</text>
+      <view class="info-item">
+        <text class="label">订单总价:</text>
+        <text class="value">¥{{ totalPrice }}</text>
       </view>
       <view class="coupon-info">
         暂无优惠券可用
       </view>
-      <view class="summary-item total">
-        <text>总计:</text>
-        <text>¥{{ finalPrice }}</text>
+      <view class="total">
+        <text class="label">总计:</text>
+        <text class="value">¥{{ totalPrice }}</text>
       </view>
     </view>
 
-    <view class="footer">
-      <button class="recharge-btn" @tap="goRecharge">去充值</button>
-      <button class="confirm-btn" @tap="confirmOrder">确认下单</button>
+    <!-- 底部按钮 -->
+    <view class="bottom-bar">
+      <button class="recharge-btn" @tap="goToRecharge">去充值</button>
+      <button class="submit-btn" @tap="submitBooking">确认下单</button>
     </view>
   </view>
 </template>
 
-<style lang="scss" scoped>
-.booking-container {
-  background-color: #f5f5f5;
-  min-height: 100vh;
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+
+interface RoomInfo {
+  id: number
+  name: string
+  price: number
+  image: string
+  area: string
+  tags: string[]
 }
 
-.header {
-  background-color: #07c160;
-  color: #fff;
-  padding: 20rpx 30rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+const roomInfo = ref<RoomInfo | null>(null)
+const mode = ref<'hourly' | 'package'>('hourly')
+const selectedDate = ref('')
+const startTime = ref('')
+const endTime = ref('')
+const duration = ref(1)
+
+// 生成未来5天的日期选项
+const availableDates = computed(() => {
+  const dates = []
+  const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const today = new Date()
   
-  .title {
-    font-size: 32rpx;
-    font-weight: bold;
+  for (let i = 0; i < 5; i++) {
+    const date = new Date(today)
+    date.setDate(today.getDate() + i)
+    
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const dayName = i === 0 ? '今天' : dayNames[date.getDay()]
+    
+    dates.push({
+      date: `${month}.${day}`,
+      day: dayName,
+      value: `${date.getFullYear()}-${month}-${day}`
+    })
   }
   
-  .back-icon, .more-icon {
-    font-size: 28rpx;
+  return dates
+})
+
+// 选择日期
+const selectDate = (date: string) => {
+  selectedDate.value = date
+}
+
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack()
+}
+
+// 设置预订模式
+const setMode = (newMode: 'hourly' | 'package') => {
+  mode.value = newMode
+}
+
+// 计算预订时间
+const formatBookingTime = computed(() => {
+  if (!startTime.value) return ''
+  const now = new Date()
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  return `${dateStr} ${startTime.value}`
+})
+
+// 计算总价
+const totalPrice = computed(() => {
+  const basePrice = roomInfo.value?.price || 0
+  return basePrice * (duration.value || 1)
+})
+
+// 去充值
+const goToRecharge = () => {
+  uni.showToast({
+    title: '充值功能开发中',
+    icon: 'none'
+  })
+}
+
+// 提交预订
+const submitBooking = () => {
+  if (!startTime.value || !endTime.value) {
+    uni.showToast({
+      title: '请选择预订时间',
+      icon: 'none'
+    })
+    return
   }
+
+  console.log('预订信息：', {
+    roomId: roomInfo.value?.id,
+    startTime: startTime.value,
+    endTime: endTime.value,
+    mode: mode.value,
+    duration: duration.value
+  })
+}
+
+onMounted(() => {
+  // 设置导航栏标题
+  uni.setNavigationBarTitle({
+    title: '预约'
+  })
+  
+  // 获取房间信息
+  const info = uni.getStorageSync('BOOKING_ROOM_INFO')
+  if (info) {
+    roomInfo.value = info
+    uni.removeStorageSync('BOOKING_ROOM_INFO')
+  } else {
+    uni.showToast({
+      title: '获取房间信息失败',
+      icon: 'none'
+    })
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 1500)
+  }
+})
+</script>
+
+<style lang="scss" scoped>
+.booking-container {
+  min-height: 100vh;
+  background: #f7f7f7;
+  padding-bottom: 120rpx;
 }
 
 .room-info {
-  background-color: #fff;
-  padding: 20rpx;
-  display: flex;
-  gap: 20rpx;
+  background: #fff;
+  padding: 16rpx;
   
-  .room-image {
-    width: 120rpx;
-    height: 120rpx;
-    border-radius: 12rpx;
+  .basic-info {
+    display: flex;
+    gap: 16rpx;
+    margin-bottom: 16rpx;
+    
+    .room-image {
+      width: 120rpx;
+      height: 120rpx;
+      border-radius: 12rpx;
+      object-fit: cover;
+    }
+    
+    .info-content {
+      flex: 1;
+      
+      .name-wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8rpx;
+        
+        .name {
+          font-size: 28rpx;
+          font-weight: bold;
+        }
+        
+        .special-tag {
+          font-size: 24rpx;
+          color: #1db0de;
+        }
+      }
+      
+      .room-desc {
+        font-size: 24rpx;
+        color: #666;
+      }
+    }
   }
   
-  .room-detail {
-    flex: 1;
+  .tags {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 8rpx;
     
-    .store-name {
-      font-size: 28rpx;
-      font-weight: bold;
-    }
-    
-    .room-name {
+    .tag {
       font-size: 24rpx;
-      color: #666;
+      color: #0d7097;
+      background: #e2f4fc;
+      padding: 4rpx 16rpx;
+      border-radius: 4rpx;
     }
   }
-  
-  .special-tag {
-    font-size: 24rpx;
-    color: #07c160;
-  }
 }
 
-.room-tags {
-  background-color: #fff;
-  padding: 20rpx;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  
-  .tag {
-    font-size: 24rpx;
-    color: #07c160;
-    background-color: rgba(7, 193, 96, 0.1);
-    padding: 4rpx 16rpx;
-    border-radius: 8rpx;
-  }
-}
-
-.booking-mode {
-  background-color: #fff;
-  padding: 20rpx;
+.mode-switch {
   display: flex;
   justify-content: center;
-  gap: 30rpx;
+  gap: 20rpx;
+  padding: 20rpx;
+  background: #fff;
   
   .mode-btn {
-    padding: 16rpx 40rpx;
-    border-radius: 40rpx;
+    flex: none;
+    padding: 12rpx 40rpx;
     font-size: 28rpx;
+    border-radius: 999rpx;
+    background: #e2f4fc;
+    color: #0d7097;
     
     &.active {
-      background-color: #07c160;
+      background: #1db0de;
       color: #fff;
+    }
+    
+    &::after {
+      border: none;
     }
   }
 }
 
-.date-picker {
-  background-color: #fff;
-  padding: 20rpx;
+.date-select {
   display: flex;
-  gap: 20rpx;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  padding: 20rpx;
+  background: #fff;
   
   .date-item {
     width: 160rpx;
     height: 160rpx;
-    border: 2rpx solid #eee;
-    border-radius: 12rpx;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    
-    &.active {
-      border-color: #07c160;
-      color: #07c160;
-    }
-  }
-}
-
-.package-list {
-  background-color: #fff;
-  padding: 20rpx;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
-  
-  .package-item {
     border: 2rpx solid #eee;
-    border-radius: 12rpx;
-    padding: 20rpx;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12rpx;
+    border-radius: 8rpx;
     
     &.active {
-      border-color: #07c160;
-      
-      .package-name, .package-price {
-        color: #07c160;
-      }
+      border-color: #1db0de;
+      background: #e2f4fc;
+    }
+    
+    .date {
+      font-size: 28rpx;
+      color: #0d7097;
+      margin-bottom: 8rpx;
+    }
+    
+    .day {
+      font-size: 24rpx;
+      color: #666;
     }
   }
 }
 
-.time-picker {
-  background-color: #fff;
+.time-select {
   padding: 20rpx;
+  background: #fff;
+  border-top: 2rpx solid #f5f5f5;
   
   .label {
     font-size: 28rpx;
+    color: #333;
     margin-bottom: 16rpx;
+    display: block;
   }
   
   .time-range {
@@ -270,152 +365,90 @@
     align-items: center;
     gap: 20rpx;
     
-    .time-input {
-      width: 160rpx;
-      height: 60rpx;
-      border: 2rpx solid #eee;
-      border-radius: 8rpx;
-      text-align: center;
+    .time-picker {
+      flex: 1;
+      
+      .picker-value {
+        height: 80rpx;
+        line-height: 80rpx;
+        padding: 0 20rpx;
+        background: #f8f8f8;
+        border-radius: 8rpx;
+        font-size: 28rpx;
+      }
+    }
+    
+    .separator {
+      font-size: 28rpx;
+      color: #666;
     }
   }
 }
 
-.order-summary {
-  background-color: #fff;
+.order-info {
   padding: 20rpx;
+  background: #fff;
   margin-top: 20rpx;
   
-  .summary-item {
+  .info-item {
     display: flex;
     justify-content: space-between;
-    font-size: 28rpx;
     margin-bottom: 16rpx;
-    
-    &.total {
-      font-weight: bold;
-      color: #ff4d4f;
-    }
+    font-size: 28rpx;
+    color: #333;
   }
   
   .coupon-info {
-    background-color: rgba(7, 193, 96, 0.1);
-    color: #07c160;
-    padding: 16rpx;
-    border-radius: 8rpx;
-    font-size: 24rpx;
     margin: 20rpx 0;
+    padding: 16rpx;
+    background: #e2f4fc;
+    color: #0d7097;
+    font-size: 26rpx;
+    border-radius: 4rpx;
+    text-align: center;
+  }
+  
+  .total {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20rpx;
+    padding-top: 20rpx;
+    border-top: 2rpx solid #eee;
+    font-size: 32rpx;
+    font-weight: bold;
   }
 }
 
-.footer {
+.bottom-bar {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
-  background-color: #fff;
-  padding: 20rpx;
+  bottom: 0;
   display: flex;
   justify-content: space-between;
-  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+  padding: 20rpx;
+  background: #e2f4fc;
   
   button {
-    width: 300rpx;
-    height: 80rpx;
-    border-radius: 40rpx;
+    width: 45%;
+    height: 88rpx;
+    line-height: 88rpx;
     font-size: 28rpx;
+    border-radius: 999rpx;
     
-    &.recharge-btn {
-      background-color: #f5f5f5;
-      color: #07c160;
+    &::after {
+      border: none;
     }
-    
-    &.confirm-btn {
-      background-color: #07c160;
-      color: #fff;
-    }
+  }
+  
+  .recharge-btn {
+    background: #fff;
+    color: #1db0de;
+  }
+  
+  .submit-btn {
+    background: #1db0de;
+    color: #fff;
   }
 }
 </style>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-
-const mode = ref('package') // 'hourly' | 'package'
-const selectedDate = ref('')
-const selectedPackage = ref(null)
-const startTime = ref('')
-const endTime = ref('')
-
-const dates = [
-  { label: '12.26', weekday: '今天', value: '2024-12-26' },
-  { label: '12.27', weekday: '周三', value: '2024-12-27' },
-  { label: '12.28', weekday: '周四', value: '2024-12-28' },
-  { label: '12.29', weekday: '周五', value: '2024-12-29' }
-]
-
-const packages = [
-  { id: 1, name: '5小时套餐', price: 49 },
-  { id: 2, name: '4小时套餐', price: 39 },
-  { id: 3, name: '3小时套餐', price: 29 }
-]
-
-const room = {
-  storeName: '朝阳御府店',
-  name: 'V111 (一楼) 58麻将',
-  images: ['https://example.com/room.jpg'],
-  tags: ['独立新风系统', '吸烟区', '茶吧机', '内容丰富']
-}
-
-const setMode = (newMode: string) => {
-  mode.value = newMode
-}
-
-const selectDate = (date: string) => {
-  selectedDate.value = date
-}
-
-const selectPackage = (packageId: number) => {
-  selectedPackage.value = packageId
-}
-
-const goBack = () => {
-  uni.navigateBack()
-}
-
-const goRecharge = () => {
-  uni.navigateTo({
-    url: '/pages/user/recharge'
-  })
-}
-
-const confirmOrder = () => {
-  // 实现下单逻辑
-}
-
-// 计算属性
-const bookingTime = computed(() => {
-  if (!selectedDate.value || !startTime.value) return '--'
-  return `${selectedDate.value} ${startTime.value}`
-})
-
-const duration = computed(() => {
-  if (mode.value === 'package') {
-    const pkg = packages.find(p => p.id === selectedPackage.value)
-    return pkg ? `${pkg.name}` : '--'
-  }
-  return '--'
-})
-
-const totalPrice = computed(() => {
-  if (mode.value === 'package') {
-    const pkg = packages.find(p => p.id === selectedPackage.value)
-    return pkg ? pkg.price : 0
-  }
-  return 0
-})
-
-const finalPrice = computed(() => {
-  // 这里可以添加优惠券等逻辑
-  return totalPrice.value
-})
-</script>
